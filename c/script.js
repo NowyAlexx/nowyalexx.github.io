@@ -49,13 +49,13 @@ function parseSettings(text) {
     return settings;
 }
 
-// Load mod details based on ID from the URL
 async function loadModDetails() {
     const modId = getUrlParameter('id'); // Get the mod ID from the URL
-    const modFolder = 'authorized'; // Set the correct folder for authorized mods
+    const firstDigit = parseInt(modId.charAt(0)); // Get the first digit of modId
+    const modFolder = (firstDigit % 2 === 0) ? 'authorized' : 'unauthorized'; // Determine folder based on first digit
 
     try {
-        const response = await fetch(`/mods/${modFolder}/${modId}/settings.ini`); // Adjust path as needed
+        const response = await fetch(`/mods/${modFolder}/${modId}/settings.ini`); // Fetch settings.ini based on mod folder
         const settingsText = await response.text();
         const settings = parseSettings(settingsText);
 
@@ -63,7 +63,7 @@ async function loadModDetails() {
             document.getElementById('mod-title').textContent = settings.title;
             document.getElementById('mod-author').textContent = `by ${settings.author}`;
             document.getElementById('mod-version').textContent = `Version: ${settings.version}`;
-            document.getElementById('mod-description').innerHTML = settings.fulldesc; // Use innerHTML to render formatted fulldesc
+            document.getElementById('mod-description').innerHTML = settings.fulldesc;
             document.getElementById('mod-thumbnail').src = settings.thumbnail;
             document.getElementById('mod-thumbnail').width = settings.imagesize;
 
@@ -90,7 +90,7 @@ async function loadModDetails() {
             }
         }
     } catch (error) {
-        //console.error('Error loading mod details:', error);
+        console.error('Error loading mod details:', error);
         //alert('Failed to load mod details. Please check the console for more information.');
     }
 }
