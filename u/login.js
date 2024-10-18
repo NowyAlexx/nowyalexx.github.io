@@ -26,10 +26,9 @@ async function login() {
         await signInWithEmailAndPassword(auth, email, password);
         // Redirect to upload.html after successful login
         window.location.href = "upload.html";
-    } catch (error) {
-        console.error("Error logging in:", error);
-        alert("Login failed: " + error.message);
-    }
+    } catch ((error) => {
+    console.error("Error logging in:", error.code, error.message);
+});
 }
 
 // Attach event listener to the login button
