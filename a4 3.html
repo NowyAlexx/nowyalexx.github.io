@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Karta A4 — pismo techniczne</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+      background: #efefef;
+      font-family: "OCR A Std", "Consolas", "Courier New", monospace;
+    }
+
+    .page {
+      width: 210mm;
+      height: 297mm;
+      margin: 20px auto;
+      position: relative;
+      box-shadow: 0 0 8px rgba(0,0,0,0.15);
+      background: white;
+      overflow: hidden;
+    }
+
+    /* <<< tryb PDF — usuwa margines i cień */
+    .page.pdf-mode {
+      margin: 0 !important;
+      box-shadow: none !important;
+    }
+
+    .frame {
+      position: absolute;
+      top: 1cm;
+      right: 1cm;
+      bottom: 1cm;
+      left: 1cm;
+      border: 1px solid #000;
+      box-sizing: border-box;
+      z-index: 1;
+    }
+
+    .corner-table {
+      position: absolute;
+      bottom: calc(1cm + 0mm);
+      left: calc(-14cm + 0mm);
+      width: 150mm;
+      height: 20mm;
+      transform-origin: bottom right;
+      transform: rotate(90deg) translateY(0);
+      font-size: 10pt;
+      z-index: 2;
+    }
+
+    .corner-table table {
+      border-collapse: collapse;
+      width: 100%;
+      height: 100%;
+      table-layout: fixed;
+    }
+
+    .corner-table td {
+      border: 1px solid #000;
+      padding: 1mm 2mm;
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .seg-left   { width: 30mm; }
+    .seg-middle { width: 95mm; }
+    .seg-right  { width: 25mm; }
+
+    .label {
+      font-size: 8pt;
+      text-transform: lowercase;
+      position: absolute;
+      top: 1mm;
+      left: 2mm;
+    }
+
+    .bigtext {
+      font-size: 27pt;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      transform-origin: center;
+    }
+
+    .bigtext.name {
+      justify-content: flex-start;
+    }
+
+    .bigtext span {
+      display: inline-block;
+      transform-origin: left center;
+      transition: transform 0.1s linear;
+    }
+
+    .editor {
+      text-align: center;
+      margin: 20px 0 10px;
+    }
+
+    .editor label {
+      margin: 0 10px;
+      display: inline-block;
+    }
+
+    .editor input {
+      font-family: inherit;
+      font-size: 14pt;
+      padding: 5px 10px;
+      width: 200px;
+      border: 1px solid #888;
+      border-radius: 6px;
+    }
+
+    .controls {
+      text-align: center;
+      margin: 10px 0 20px;
+    }
+
+    button {
+      font-size: 15px;
+      padding: 10px 16px;
+      border-radius: 6px;
+      border: 1px solid #666;
+      background: #f5f5f5;
+      cursor: pointer;
+      margin: 0 5px;
+    }
+
+    button:active { transform: translateY(1px); }
+
+    @media print {
+      body { background: white; }
+      .editor, .controls { display: none; }
+      .page { margin: 0; box-shadow: none; }
+      .frame { border: 1px solid #000; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="editor">
+    <label>Data: <input type="text" id="inputDate" value="dd.mm.rrrr"></label>
+    <label>Imię i nazwisko: <input type="text" id="inputName" value="Jan Kowalski"></label>
+    <label>Nr ćwiczenia: <input type="text" id="inputEx" value="5"></label>
+  </div>
+
+  <div class="controls">
+    <button onclick="window.print()">🖨️ Drukuj kartkę A4</button>
+    <button id="savePdfBtn">💾 Zapisz jako PDF</button>
+  </div>
+
+  <div id="pdfContent" class="page">
+    <div class="frame"></div>
+
+    <div class="corner-table">
+      <table>
+        <tr>
+          <td class="seg-left">
+            <div class="label">data:</div>
+            <div class="bigtext"><span id="dateText">dd.mm.rrrr</span></div>
+          </td>
+          <td class="seg-middle">
+            <div class="label">imię i nazwisko:</div>
+            <div class="bigtext name"><span id="nameText">Jan Kowalski</span></div>
+          </td>
+          <td class="seg-right">
+            <div class="label">nr ćwiczenia:</div>
+            <div class="bigtext"><span id="exText">5</span></div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function fitText(el) {
+      const span = el.querySelector('span');
+      const parentWidth = el.clientWidth - 4;
+      span.style.transform = "scale(1)";
+      let scale = 1;
+      while (span.scrollWidth * scale > parentWidth && scale > 0.3) {
+        scale -= 0.01;
+        span.style.transform = `scale(${scale})`;
+      }
+    }
+
+    function fitAll() {
+      document.querySelectorAll('.bigtext').forEach(fitText);
+    }
+
+    const inputDate = document.getElementById('inputDate');
+    const inputName = document.getElementById('inputName');
+    const inputEx = document.getElementById('inputEx');
+
+    const dateText = document.getElementById('dateText');
+    const nameText = document.getElementById('nameText');
+    const exText = document.getElementById('exText');
+
+    function updateText() {
+      dateText.textContent = inputDate.value || ' ';
+      nameText.textContent = inputName.value || ' ';
+      exText.textContent = inputEx.value || ' ';
+      fitAll();
+    }
+
+    inputDate.addEventListener('input', updateText);
+    inputName.addEventListener('input', updateText);
+    inputEx.addEventListener('input', updateText);
+
+    window.addEventListener('resize', fitAll);
+    window.addEventListener('load', fitAll);
+
+    document.getElementById('savePdfBtn').addEventListener('click', async () => {
+      const element = document.getElementById('pdfContent');
+
+      const name = inputName.value.trim() || "Brak nazwiska";
+      const date = inputDate.value.trim() || "Brak daty";
+      const ex = inputEx.value.trim() || "Brak nr";
+      const fileName = `Formatka M01 - ${name}, ${date}, ${ex}.pdf`;
+
+      const opt = {
+        margin: 0,
+        filename: fileName,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 3 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      element.classList.add('pdf-mode'); // <<< usuń margines
+      await html2pdf().set(opt).from(element).save();
+      element.classList.remove('pdf-mode'); // <<< przywróć
+    });
+  </script>
+</body>
+</html>
